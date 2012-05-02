@@ -1,0 +1,104 @@
+/* Color Palette
+----------------------------------------------------------------------------------------------------------------------
+Greys (lighter to darker)
+    #eee    : Unselected tabs
+    #d5d5d5 : Background
+    #555    : h3
+    #222    : Body Text
+
+Reds
+    #F7CBCA    : Light Red (Message bar errors)
+    #900    : Bright Red (h1, a)
+    #700    : Darker Red (a:visited)
+*/
+@media screen {
+    
+body {
+    background-color: #e6e6e6;
+    color: #444;
+    font:87.5%/1.42857143em "Lucida Grande", Verdana, sans-serif; 
+    margin:0;
+    padding: 0 0 40px;
+}
+
+body {
+    /*max-width:1060px;*/
+    margin:auto;
+}
+
+h1 {
+    line-height: 1.5em;
+}
+
+h2 {
+    color: #666;
+}
+
+a:link {color: #38c;}
+a:visited {color: #38c;}
+a:hover {color: #369;}
+a:active {color: #333;}
+
+a img {border:none;}
+
+ul.plain-list {list-style:none;}
+/*
+div.left-panel {
+    float:left;
+    width:30%;
+    height:100%;
+}
+
+div.right-panel {
+    float:right;
+    width:60%;
+    height:100%;
+}
+*/
+div.item-summary {
+    padding: 2px 6px; 
+    border: 2px solid; 
+    border-radius: 10px; 
+    cursor: pointer;
+    margin:3px;
+}
+
+div.item-summary-list {
+    margin:10px;
+    padding:3px;
+    height:100%;
+}
+
+div.collection-list {
+    width:300px;
+/*    max-height:50%;
+    overflow:scroll;
+    */
+    float:left;
+}
+
+div.tag-list {
+    width:300px;
+/*
+    max-height:25%;
+    overflow:scroll;
+    */
+    float:left;
+}
+
+.windowheightbox {
+    min-height:600px;
+}
+
+div.article {
+    border:1px solid black;
+    max-width:1200px;
+    padding:5px;
+    margin:5px;
+}
+
+div.article tr {
+    text-align:left;
+}
+
+}

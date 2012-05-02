@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Feedbrain</title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!--
+    <link rel=stylesheet href="http://enyojs.com/enyo-2.0b3/enyo.css">
+    
+    <script src="http://enyojs.com/enyo-2.0b3/enyo.js"></script>
+    <script src="./enyopackage.js"></script>
+    <script src="../enyojs/onyx/package.js" type="text/javascript"></script>
+    -->
+    
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="./jquery.tmpl.js"></script>
+    <script src="http://localhost:8080/socket.io/socket.io.js"></script>
+    
+    <style>
+        .pullout-grabbutton {
+            position: absolute;
+            height: 54px;
+            width: 50px;
+            top: 0;
+            right: -46px;
+            border-radius: 0 10px 10px 0;
+            background-color: #D8D8D8;
+            box-shadow: 4px 4px 4px rgba(0,0,0,0.3);
+        }
+
+        .pullout {
+            background-color: #D8D8D8;
+            box-shadow: 4px 4px 4px rgba(0,0,0,0.3);
+            border-radius: 0 0 10px 0;
+            border:1px solid #AAA;
+            min-height:300px;
+            width:400px;
+            position:fixed;
+            top:200px;
+            left:-400px;
+        }
+
+        .pullout-controls > * {
+            margin: 20px;
+            padding-left: 30px;
+            padding-right: 30px;
+            display: block;
+        }
+
+        .fitting-color {
+            background: #B7BFC4;
+        }
+        
+        
+        body {
+            background-color: #DDD;
+            color: #444;
+            font:87.5%/1.42857143em "Lucida Grande", Verdana, sans-serif; 
+            padding: 0 0 40px;
+        }
+        
+        .onyx {
+            font-size:12px;
+        }
+        
+        h1 {
+            line-height: 1.5em;
+        }
+
+        h2 {
+            line-height: 1em;
+            color: #666;
+        }
+        
+        #app_documentPane {
+            padding: 15px;
+            min-height:800px;
+        }
+        
+        div.article {
+            background-color: #e6e6e6;
+            border:1px solid black;
+            padding:5px 15px;
+            border-radius: 10px;
+            margin:5px 35px;
+            
+            -moz-box-shadow: 0 0 8px 2px #666;
+            -webkit-box-shadow: 0 0 8px 2px #666;
+            box-shadow: 0 0 8px 2px #666;
+        }
+        
+        h2.articleTitle {
+            
+        }
+        
+        h2.read {
+            background-color:#5F5;
+        }
+    </style>
+    
+    <script type="text/javascript" charset="utf-8">
+        var J = jQuery.noConflict();
+        var socket;
+        var stores = [
+            'Ars-Technica',
+            'Ars-Technica-Features'
+        ];
+        
+        var fbuc = {};
+        /*
+        var documents = [
+            'Ars-Technica_Google-reportedly-plans-to-launch-online-store-to-sell-Nexus-tablet',
+            'Ars-Technica_New-Zeus-P2P-bots-anonymous-cyber-crime-ready-for-mass-market'
+        ];
+        */
+        var docObjects = {};
+        var docidList = [];
+        var category = '';
+        
+        fbuc.userClassify = function(docuid, meta){
+            console.log('userClassifyDoc');
+            console.log({docuid:docuid, meta:meta});
+            
+            socket.emit('userClassifyDoc', {docuid:docuid, meta:meta});
+        };
+        
+        fbuc.appendDocs = function(results){
+            J.each(results, function(ind, result){
+                var docOb = result.value;
+                docObjects[result.id] = docOb;
+                docidList.push(result.id);
+                
+                if(docOb.feedbraindata_user && docOb.feedbraindata_user.read == 1){
+                    console.log("article already read " + docOb.title);
+                }
+                var jarticle = J("#articleTemplate").tmpl({article:docOb}).appendTo(J("#app_documentPane"));
+                jarticle.find(".articleContent").hide();
+                
+                if(docOb.feedbraindata_user && docOb.feedbraindata_user.interesting){
+                    console.log("article already has interesting score of " + docOb.feedbraindata_user.interesting);
+                    jarticle.find('.interestingSelect').val(docOb.feedbraindata_user.interesting);
+                }
+                
+            });
+        };
+        
+        fbuc.updateDoc = function(doc){
+            var docid = doc._id;
+            var docEl = J("div.article[data-docuid='" + docid + "']");
+            var jarticle = J("#articleTemplate").tmpl({article:doc}).replaceAll(docEl);
+            jarticle.find(".articleContent").hide();
+        };
+        
+        jQuery(document).ready(function() {
+            //bind pullout grabber animation
+            J('#pullout-grabbutton').on('click', function(e){
+                console.log("grabbutton clicked");
+                var showing = J("#pullout").data('showing');
+                if(!showing){
+                    J("#pullout").animate({
+                        left: '0px'
+                    });
+                    J("#pullout").data('showing', true)
+                }
+                else{
+                    J("#pullout").animate({
+                        left: '-400px'
+                    });
+                    J("#pullout").data('showing', false)
+                }
+            });
+            
+            //bind article visible toggling
+            J("#content").on('click', '.articleTitle', function(e){
+                J(this).closest('.article').find('.articleContent').slideToggle();
+            });
+            
+            //bind user classification
+            J("#content").on('submit', '.userClassifyForm', function(e){
+                e.preventDefault();
+                var form = J(this).closest('.userClassifyForm');
+                var docuid = form.data('docuid');
+                var field = form.find('input.field').val();
+                var value = form.find('input.value').val();
+                var meta = {};
+                meta[field] = value;
+                fbuc.userClassify(docuid, meta);
+            });
+            
+            //bind user read marking
+            J("#content").on('click', '.markasread', function(e){
+                e.preventDefault();
+                var jarticle = J(this).closest('.article');
+                var docuid = jarticle.data('docuid');
+                var field = 'read';
+                var value = 1;
+                var meta = {};
+                meta[field] = value;
+                fbuc.userClassify(docuid, meta);
+                jarticle.find('h2.articleTitle').addClass('read');
+            });
+            
+            //bind interestingness change to update doc usermeta
+            J("#content").on('change', '.interestingSelect', function(e){
+                e.preventDefault();
+                var jarticle = J(this).closest('.article');
+                var docuid = jarticle.data('docuid');
+                var interestingScore = J(this).val();
+                var meta = {'interesting': interestingScore};
+                
+                fbuc.userClassify(docuid, meta);
+            });
+            
+            //bind category select links
+            J("#pullout").on('click', '#read-articles', function(e){
+                e.preventDefault();
+                category = 'read';
+                
+                socket.emit('getRecentCatDocs', {limit:25, skip:0, category:category});
+            });
+            
+            J("#pullout").on('click', '#interesting-articles', function(e){
+                e.preventDefault();
+                category = 'interesting';
+                
+                socket.emit('getRecentCatDocs', {limit:25, skip:0, category:category});
+            });
+            
+            J("#pullout").on('click', '#longform-articles', function(e){
+                e.preventDefault();
+                category = 'longform';
+                
+                socket.emit('getRecentCatDocs', {limit:25, skip:0, category:category});
+            });
+            
+            //bind article control links
+            J("#content").on('click', '.feed-content-link', function(e){
+                e.preventDefault();
+                var jarticle = J(this).closest('.article');
+                var docuid = jarticle.data('docuid');
+                var doc = docObjects[docuid];
+                
+                jarticle.find('.articleText').empty().html(doc.description);
+            });
+            
+            J("#content").on('click', '.readable-content-link', function(e){
+                e.preventDefault();
+                var jarticle = J(this).closest('.article');
+                var docuid = jarticle.data('docuid');
+                var doc = docObjects[docuid];
+                
+                jarticle.find('.articleText').empty().html(doc.readable.html);
+            });
+            
+            J("#content").on('click', '.read-again-link', function(e){
+                e.preventDefault();
+                var jarticle = J(this).closest('.article');
+                var docuid = jarticle.data('docuid');
+                socket.emit('readDocAgain', docuid);
+                
+            });
+            
+            //bind moredocs click
+            J("#moredocslink").on('click', function(e){
+                var leastRecentID = encodeURIComponent(J(".article").last().data('docuid'));
+                socket.emit('moreDocs', {beforeID:leastRecentID, limit:25, skip:0});
+            });
+            
+            socket = io.connect('http://localhost:8080');
+            socket.on('gotRecentDocs', function (results) {
+                console.log("gotRecentDocs");
+                //console.log(docs);
+                J("#app_documentPane").empty();
+                fbuc.appendDocs(results);
+                
+            });
+            
+            socket.on('gotMoreDocs', function(results){
+                console.log("gotMoreDocs");
+                fbuc.appendDocs(results);
+            });
+            
+            socket.on('rereadDoc', function(doc){
+                console.log("reread a document");
+                docObjects[doc._id] = doc;
+                fbuc.updateDoc(doc);
+            });
+            
+            console.log('emiting getDocs');
+            socket.emit('getRecentDocs', {limit:25, skip:0});
+            
+        });
+
+        
+    </script>
+</head>
+
+<body>
+<div id="content">
+    <div id="app_documentPane">
+        
+    </div>
+    <a href="#" id="moredocslink">More</a>
+</div>
+<div id="pullout" class="pullout">
+    <div id="pullout-grabbutton" class="pullout-grabbutton">
+        &gt;
+    </div>
+    <div id="pullout-menu">
+        <ul id="pullout-menu-category-list">
+            <li><a id="read-articles">Read</a></li>
+            <li><a id="interesting-articles">Interesting</a></li>
+            <li><a id="longform-articles">Long</a></li>
+        </ul>
+    </div>
+</div>
+</body>
+<script id="articleTemplate" type="text/x-jquery-tmpl">
+    <div class="article" data-docuid="${article.feedbraindata.uid}">
+        <div class="header">
+            {{if article.feedbraindata_user && article.feedbraindata_user.read}}
+            <h3 class="articleTitle read">${article.title}</h3>
+            {{else}}
+            <h3 class="articleTitle">${article.title}</h3>
+            {{/if}}
+            <span class="source">${article.feedbraindata.source}</span>
+            <div class="articleInterestingScore">
+                <select name="${article.feedbraindata.uid}_interesting" class="interestingSelect">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+        </div>
+        <div class="articleContent">
+            <ul class="article-controls-list">
+                <li><a href="#" class="feed-content-link">Feed Content</a></li>
+                <li><a href="#" class="readable-content-link">Readable Content</a></li>
+                <li><a href="#" class="read-again-link">ReRead Content</a></li>
+            </ul>
+            <a href="${article.feedbraindata.uid}">${article.title}</a>
+            <p><a class="markasread" href="#">Mark as Read</a></p>
+            <div class="articleText">
+            {{if article.readable}}
+            {{html article.readable.html}}
+            {{else}}
+            {{html article.description}}
+            {{/if}}
+            </div>
+            <div class="articleScores">
+                <h3>Scores</h3>
+                <table class="articleScores">
+                    {{each(index, val) article.feedbraindata.scores}}
+                    <tr>
+                        <th>${val['name']}</th>
+                        <td>${val.score}</td>
+                    </tr>
+                    {{/each}}
+                </table>
+                <div class="userClassify">
+                    <form class="userClassifyForm" data-docuid="${article.feedbraindata.uid}">
+                        <label for="${article.feedbraindata.uid}_user_classify_field">
+                        Classify As:
+                        <input type="text" class="field" name="${article.feedbraindata.uid}_user_classify_field" id="${article.feedbraindata.uid}_user_classify_field">
+                        </label>
+                        <label for="${article.feedbraindata.uid}_user_classify_value">
+                        Classify As:
+                        <input type="text" class="value" name="${article.feedbraindata.uid}_user_classify_value" id="${article.feedbraindata.uid}_user_classify_value">
+                        </label>
+                        <button type="submit">Classify</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</script>
+
+</html>

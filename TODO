@@ -1,0 +1,51 @@
+TODO
+
+make actual decision about how to separate documents into sources, backed up by mongodb queries
+
+flesh out what UI should be capable of for first version
+ - default: display intermixed stream of most recent docs (order by date)
+ - read flag
+
+decide how scores should be represented (though mongodb queries seem flexible enough to deal with almost anything as long as I can figure out what to tell it to do)
+
+
+have feeds actually retrieve from live feeds, including conditional requests, and allow for polling
+
+sort out how to either merge user input into documents, or query user input as well as machine scores ending with actual documents
+ - on user input, add to separate collection referencing doc uid and add to document
+ - on new document (or only training?) check for existing user input and add to document
+ 
+load more docs link
+load more recent docs automatically when they're added to mongo
+
+
+make standard either saving meta data to storage each time it is edited or saving it to the doc and leaving it up to calling code to eventually save the document. Former requires returning an updated doc with the new revID
+
+
+fix issues with overwriting docs on parallel processing requests: deterministically combine the results at the end?
+
+
+interesting/quality scores (/5 stars, for neural/bayesian purposes can be fractional)
+
+mark failed retrieval (readability presumably) for later retry
+
+frontend toggle to display readability/non (+/- summary/description?) and mark if readability good for source
+button on interface to trigger readability instead of automatically trying for everything?
+
+
+individual timers for feed sources (especially so I don't pull the full ars feed all the time since it has no caching)
+
+display scores and analytics on the side of the article, right now the text is too wide
+add more categories: source specific?
+make category buttons pretty
+auto-refresh more recent?
+
+set up couchdb based training now that there are a few data points
+
+train based on things you've linked to on twitter
+retrieve things people have linked to on twitter
+
+filter out "Advertisement:" titles
+
+
+

@@ -1,0 +1,64 @@
+
+components:
+trainer
+    run through existing documents with scores and classifications to train the AI
+    save trained machines
+    functions:
+        setRubric(options)
+        train(documents)
+        save(path)
+
+importer
+    pull in existing documents
+    id + catalog
+    score
+    use existing classifications and add to training set
+    functions:
+        load(path) //load already processed docs from directory or file
+
+classifier
+    preprocess normalized JSON into form acceptable by whatever trained machine we're using
+    feed it in and save machine's output (with normalized document or separate?)
+    functions:
+        classify(doc, callback)
+analyze
+    take a document
+    run configured scoring modules on it
+    return the updated document with scores in the feedbrain meta property
+    functions:
+        init(options) //configure scoring
+        analyze(doc, callback) //take doc, run scoring, callback with updated doc
+export
+    just save the normalized form of json into file and use that always until scale demands something like mongo?
+    add document to registry
+    functions:
+        save(docs) //save processed docs to reloadable file or DB
+
+listener
+    listen or poll different sources of documents to feed into aggregator
+    pull in documents from various sources
+    run through processing filters (readability)
+    normalize into expected form
+    
+    functions:
+        listen(options, callback) //callback will generally be aggregator.processDoc(doc)
+        read(options, callback) //read something that doesn't continue
+        
+aggregator
+    id + catalog
+    score
+    classify
+    functions:
+        registerSource() //source to pull documents from
+        processDoc(error, doc) //callback for sources to pass documents to
+        classify(callback) //run through classifier with current config and callback with updated document
+        
+scoring modules
+    word count
+    keyword presence
+    bayesian classifier (node natural tokenizer with stemming)
+    td-idf?
+    template functions:
+        
+feedbrain utils
+    perform common actions on docs for modules to use so we can change information storage/doc normalization in one place

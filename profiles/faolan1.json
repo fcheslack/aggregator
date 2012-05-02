@@ -1,0 +1,8 @@
+{"modules":[
+    {"name": "wcount"},
+    {"name": "rt"},
+    {"name": "keywords",
+     "initArg": {"keywords":["fox", "cat", "virtual world"]}}
+],
+"neuralNet": null
+}
